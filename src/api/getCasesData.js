@@ -12,18 +12,11 @@ const axiosConfig = {
   },
 };
 
-const postData = {
-  start_time: "2024/3/8",
-  end_time: "2024/3/14",
-  category: [],
-  chunk: 1,
-};
-
-export const getCasesData = async (data) => {
+export const getCasesData = async (payload) => {
   try {
-    const response = await axios.post(apiUrl, postData, axiosConfig);
-    console.log("Response:", response.data);
+    const response = await axios.post(apiUrl, payload, axiosConfig);
+    return response.data.data;
   } catch (error) {
-    console.error("Error fetching data:", error);
+    throw error;
   }
 };

@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useState } from "react";
 import { styled } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -6,12 +6,17 @@ import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import TableSortLabel from "@mui/material/TableSortLabel";
 import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import colorMap from "../styles/colorMap";
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
-    backgroundColor: theme.palette.common.black,
-    color: theme.palette.common.white,
+    backgroundColor: colorMap.primary_5,
+    color: theme.palette.common.black,
+    borderBottom: `1px solid ${colorMap.primary}`,
+    borderRight: "2px solid white",
   },
   [`&.${tableCellClasses.body}`]: {
     fontSize: 14,
@@ -22,49 +27,108 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   "&:nth-of-type(odd)": {
     backgroundColor: theme.palette.action.hover,
   },
-  // hide last border
-  "&:last-child td, &:last-child th": {
+
+  "td, th": {
     border: 0,
+    borderRight: "2px solid white",
   },
 }));
 
-const createData = (name, calories, fat, carbs, protein) => {
-  return { name, calories, fat, carbs, protein };
+const getTime = (dateTime) => {
+  return dateTime.split(" ")[1];
 };
 
-const rows = [
-  createData("Frozen yoghurt", 159, 6.0, 24, 4.0),
-  createData("Ice cream sandwich", 237, 9.0, 37, 4.3),
-  createData("Eclair", 262, 16.0, 24, 6.0),
-  createData("Cupcake", 305, 3.7, 67, 4.3),
-  createData("Gingerbread", 356, 16.0, 49, 3.9),
-];
+const getDate = (dateTime) => {
+  return dateTime.split(" ")[0];
+};
 
-const CaseTable = () => {
+const CaseTable = ({ displayedData = [], page = 1 }) => {
+  const [orderBy, setOrderBy] = useState("");
+  const [order, setOrder] = useState("asc");
+
+  const handleSort = (property) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
+  };
+
+  const sortedData = displayedData.sort((a, b) => {
+    if (order === "asc") {
+      return a[orderBy] < b[orderBy] ? -1 : 1;
+    } else {
+      return a[orderBy] > b[orderBy] ? -1 : 1;
+    }
+  });
+
   return (
     <TableContainer component={Paper}>
       <Table sx={{ minWidth: 700 }} aria-label="customized table">
         <TableHead>
           <TableRow>
-            <StyledTableCell>Dessert (100g serving)</StyledTableCell>
-            <StyledTableCell align="right">Calories</StyledTableCell>
-            <StyledTableCell align="right">Fat&nbsp;(g)</StyledTableCell>
-            <StyledTableCell align="right">Carbs&nbsp;(g)</StyledTableCell>
-            <StyledTableCell align="right">Protein&nbsp;(g)</StyledTableCell>
+            <StyledTableCell>#</StyledTableCell>
+            <StyledTableCell align="left">
+              <TableSortLabel
+                active={orderBy === "record_time"}
+                direction={orderBy === "record_time" ? order : "asc"}
+                onClick={() => handleSort("record_time")}
+              >
+                回報日期
+              </TableSortLabel>
+            </StyledTableCell>
+            <StyledTableCell align="left">
+              <TableSortLabel
+                active={orderBy === "reply_time"}
+                direction={orderBy === "reply_time" ? order : "asc"}
+                onClick={() => handleSort("reply_time")}
+              >
+                受理日期
+              </TableSortLabel>
+            </StyledTableCell>
+            <StyledTableCell align="left">主分類</StyledTableCell>
+            <StyledTableCell align="center">問題主旨</StyledTableCell>
+            <StyledTableCell align="center">
+              <TableSortLabel
+                active={orderBy === "satisfaction"}
+                direction={orderBy === "satisfaction" ? order : "asc"}
+                onClick={() => handleSort("satisfaction")}
+              >
+                滿意度
+              </TableSortLabel>
+            </StyledTableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((row) => (
-            <StyledTableRow key={row.name}>
-              <StyledTableCell component="th" scope="row">
-                {row.name}
-              </StyledTableCell>
-              <StyledTableCell align="right">{row.calories}</StyledTableCell>
-              <StyledTableCell align="right">{row.fat}</StyledTableCell>
-              <StyledTableCell align="right">{row.carbs}</StyledTableCell>
-              <StyledTableCell align="right">{row.protein}</StyledTableCell>
-            </StyledTableRow>
-          ))}
+          {sortedData?.map((row, index) => {
+            const indexNumber = 100 * (page - 1) + index + 1;
+            return (
+              <StyledTableRow key={row.name}>
+                <StyledTableCell component="th" scope="row">
+                  {indexNumber < 10 ? `0${indexNumber}` : indexNumber}
+                </StyledTableCell>
+                <StyledTableCell align="left">
+                  {getDate(row.record_time)}
+                  <Typography fontWeight="700" fontSize="10px">
+                    {getTime(row.record_time)}
+                  </Typography>
+                </StyledTableCell>
+                <StyledTableCell align="left">
+                  {getDate(row.reply_time)}
+                  <Typography fontWeight="700" fontSize="10px">
+                    {getTime(row.reply_time)}
+                  </Typography>
+                </StyledTableCell>
+                <StyledTableCell align="left">
+                  {row.main_category}
+                </StyledTableCell>
+                <StyledTableCell align="left">
+                  {row.petition_subject}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {row.satisfaction}
+                </StyledTableCell>
+              </StyledTableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </TableContainer>

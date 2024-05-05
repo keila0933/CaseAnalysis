@@ -1,13 +1,6 @@
 import React, { useState } from "react";
 import { DateRangePicker, createStaticRanges } from "react-date-range";
-import {
-  addDays,
-  endOfDay,
-  startOfDay,
-  addMonths,
-  startOfWeek,
-  endOfWeek,
-} from "date-fns";
+import { addDays, endOfDay, startOfDay, addMonths, format } from "date-fns";
 import { zhTW } from "date-fns/locale";
 
 import { styled } from "@mui/material/styles";
@@ -22,51 +15,54 @@ import "react-date-range/dist/styles.css"; // main style file
 import "react-date-range/dist/theme/default.css"; // theme css file
 
 import CalendarIcon from "../SvgIcon/CalendarIcon";
+import colorMap from "../styles/colorMap";
 
 const dateDefined = {
-  startOfWeek: startOfWeek(new Date()),
-  endOfWeek: endOfWeek(new Date()),
   startOfToday: startOfDay(new Date()),
   endOfToday: endOfDay(new Date()),
+  startOfLastWeek: startOfDay(addDays(new Date(), -6)),
+  startOfLastMonth: startOfDay(addMonths(new Date(), -1)),
   startOfLastThreeMonth: startOfDay(addMonths(new Date(), -3)),
   startOfLastHalfYear: startOfDay(addMonths(new Date(), -6)),
   startOfLastYear: startOfDay(addMonths(new Date(), -12)),
 };
 
+const DATE_FORMAT = "yyyy/MM/dd";
+
 const customStaticRange = [
   {
     label: "近一週",
     range: () => ({
-      startDate: dateDefined.startOfWeek,
-      endDate: dateDefined.endOfWeek,
+      startDate: dateDefined.startOfLastWeek,
+      endDate: dateDefined.endOfToday,
     }),
   },
   {
     label: "一個月內",
     range: () => ({
       startDate: dateDefined.startOfLastMonth,
-      endDate: dateDefined.startOfToday,
+      endDate: dateDefined.endOfToday,
     }),
   },
   {
     label: "三個月內",
     range: () => ({
       startDate: dateDefined.startOfLastThreeMonth,
-      endDate: dateDefined.startOfToday,
+      endDate: dateDefined.endOfToday,
     }),
   },
   {
     label: "半年內",
     range: () => ({
       startDate: dateDefined.startOfLastHalfYear,
-      endDate: dateDefined.startOfToday,
+      endDate: dateDefined.endOfToday,
     }),
   },
   {
     label: "一年內",
     range: () => ({
       startDate: dateDefined.startOfLastYear,
-      endDate: dateDefined.startOfToday,
+      endDate: dateDefined.endOfToday,
     }),
   },
   {
@@ -87,15 +83,32 @@ const StyledDateRangePickerContainer = styled(Popover)(({ theme }) => ({
   },
 }));
 
-export default function CaseDateRangePicker() {
-  const [state, setState] = useState([
+const StyledDateRangePickerInput = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  padding: theme.spacing(0.5),
+  ".MuiOutlinedInput-root": {
+    width: theme.spacing(31.25),
+    borderRadius: "2rem",
+    backgroundColor: colorMap.grey,
+  },
+
+  ".MuiOutlinedInput-notchedOutline": {
+    borderColor: colorMap.grey,
+  },
+}));
+
+export default function CaseDateRangePicker({
+  selectDateRange,
+  onChangeDateRange,
+}) {
+  const [displayDate, setDisplayDate] = useState([
     {
-      startDate: addDays(new Date(), -7),
-      endDate: new Date(),
+      startDate: selectDateRange?.start,
+      endDate: selectDateRange?.end,
       key: "selection",
     },
   ]);
-  console.log("state", state);
   const [anchorEl, setAnchorEl] = React.useState(null);
 
   const handleClick = (event) => {
@@ -104,6 +117,25 @@ export default function CaseDateRangePicker() {
 
   const handleClose = () => {
     setAnchorEl(null);
+    setDisplayDate([
+      {
+        startDate: selectDateRange?.start || addDays(new Date(), -7),
+        endDate: selectDateRange?.end || new Date(),
+        key: "selection",
+      },
+    ]);
+  };
+
+  const handleConfirmDateChange = () => {
+    onChangeDateRange({
+      start: format(displayDate[0]?.startDate, DATE_FORMAT),
+      end: format(displayDate[0]?.endDate, DATE_FORMAT),
+    });
+    setAnchorEl(null);
+  };
+
+  const getDisplayDateValue = () => {
+    return `${format(displayDate[0]?.startDate, DATE_FORMAT)} - ${format(displayDate[0]?.endDate, DATE_FORMAT)}`;
   };
 
   const open = Boolean(anchorEl);
@@ -111,21 +143,36 @@ export default function CaseDateRangePicker() {
 
   return (
     <>
-      <Box display="flex" alignItems="center">
-        <Typography pr={2}>日期區間</Typography>
+      <StyledDateRangePickerInput>
+        <Typography variant="subtitle2" pr={2}>
+          日期區間
+        </Typography>
         <TextField
+          value={getDisplayDateValue()}
           onClick={handleClick}
           variant="outlined"
           autoComplete="off"
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
-                <CalendarIcon color="secondary" />
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  width="2.25rem"
+                  height="1.75rem"
+                  backgroundColor={colorMap.primary}
+                  borderRadius="1rem"
+                  py={0.25}
+                  px={0.5}
+                >
+                  <CalendarIcon />
+                </Box>
               </InputAdornment>
             ),
           }}
         />
-      </Box>
+      </StyledDateRangePickerInput>
       <StyledDateRangePickerContainer
         id={id}
         open={open}
@@ -142,13 +189,13 @@ export default function CaseDateRangePicker() {
       >
         <DateRangePicker
           locale={zhTW}
-          onChange={(item) => setState([item.selection])}
+          onChange={(item) => setDisplayDate([item.selection])}
           showSelectionPreview={false}
           showMonthAndYearPickers={false}
           showDateDisplay={false}
           moveRangeOnFirstSelection={false}
           months={2}
-          ranges={state}
+          ranges={displayDate}
           direction="horizontal"
           preventSnapRefocus={true}
           calendarFocus="forwards"
@@ -157,8 +204,10 @@ export default function CaseDateRangePicker() {
           staticRanges={createStaticRanges(customStaticRange)}
         />
         <Box display="flex" justifyContent="flex-end" pb={2}>
-          <Button sx={{ marginRight: "1rem" }}>取消</Button>
-          <Button>確認</Button>
+          <Button onClick={handleClose} sx={{ marginRight: "1rem" }}>
+            取消
+          </Button>
+          <Button onClick={handleConfirmDateChange}>確認</Button>
         </Box>
       </StyledDateRangePickerContainer>
     </>

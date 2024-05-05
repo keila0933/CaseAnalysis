@@ -1,14 +1,19 @@
 import * as React from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
-import Toolbar from "@mui/material/Toolbar";
-import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
-import MenuIcon from "@mui/icons-material/Menu";
 
 import CaseDateRangePicker from "./CaseDateRangePicker";
+import ExtendListIcon from "../SvgIcon/ExtendListIcon";
+import CollapseListIcon from "../SvgIcon/CollapseListIcon";
+import colorMap from "../styles/colorMap";
 
-const TopBar = () => {
+const TopBar = ({
+  selectDateRange,
+  onChangeDateRange,
+  isListExtend,
+  onListExtend,
+}) => {
   return (
     <AppBar
       position="fixed"
@@ -18,22 +23,26 @@ const TopBar = () => {
         color: "black",
       }}
     >
-      <Toolbar>
-        <Box sx={{ flexGrow: 1 }}>
+      <Box display="flex" alignItems="center" justifyContent="space-between">
+        <Box sx={{ backgroundColor: colorMap.primary_5, padding: "10px 0px" }}>
           <IconButton
             size="large"
-            edge="start"
-            color="inherit"
             aria-label="menu"
-            sx={{ mr: 2 }}
+            sx={{ px: 1.75 }}
+            onClick={onListExtend}
+            disableFocusRipple
+            disableRipple
           >
-            <MenuIcon />
+            {isListExtend ? <ExtendListIcon /> : <CollapseListIcon />}
           </IconButton>
         </Box>
-        <Box sx={{ flexGrow: 0 }}>
-          <CaseDateRangePicker />
+        <Box>
+          <CaseDateRangePicker
+            selectDateRange={selectDateRange}
+            onChangeDateRange={onChangeDateRange}
+          />
         </Box>
-      </Toolbar>
+      </Box>
     </AppBar>
   );
 };
