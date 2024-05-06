@@ -12,6 +12,7 @@ import FilterSelect from "./components/FilterSelect";
 import BarChart from "./components/CaseBarChart";
 import CaseTable from "./components/CaseTable";
 import PaginationInfo from "./components/PaginationInfo";
+import Loader from "./components/Loader";
 import colorMap from "./styles/colorMap";
 
 const StyledDashboardLayout = styled(Box)(({ theme }) => ({
@@ -31,6 +32,7 @@ const Dashboard = ({ selectDateRange }) => {
   const [appliedCategory, setAppliedCategory] = useState([]);
   const [cache, setCache] = useState({});
   const [initialized, setInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
 
   const itemsPerPage = 100;
@@ -62,6 +64,7 @@ const Dashboard = ({ selectDateRange }) => {
   const fetchData = async (chunk, needReset = false) => {
     if (!needReset && cache[chunk]?.length > 0) return;
     try {
+      setIsLoading(true);
       const payload = {
         start_time: selectDateRange?.start,
         end_time: selectDateRange?.end,
@@ -71,9 +74,13 @@ const Dashboard = ({ selectDateRange }) => {
       const result = await getCasesData(payload);
       setStateData(result);
       setCache({ ...cache, [chunk]: result?.table_data });
+      setIsLoading(false);
     } catch (error) {
       enqueueSnackbar("There was a problem with the API", { variant: "error" });
       console.error("Error fetching data:", error);
+      setIsLoading(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -102,13 +109,13 @@ const Dashboard = ({ selectDateRange }) => {
           setAppliedCategory={setAppliedCategory}
         />
       </Grid>
-
       {/* content */}
       <Box px={2} pb={4} height="calc(100% - 10rem)" overflow="auto">
-        <BarChart chartData={stateData?.petition_count} />
-        <CaseTable displayedData={displayedData} page={page} />
+        <Loader isShown={isLoading}>
+          <BarChart chartData={stateData?.petition_count} />
+          <CaseTable displayedData={displayedData} page={page} />
+        </Loader>
       </Box>
-
       {/* footer */}
       <Box
         position="sticky"
